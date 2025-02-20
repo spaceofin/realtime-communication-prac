@@ -75,6 +75,20 @@
           input.value = "";
         }
       });
+
+      socket.on("chat message", (msg) => {
+        const item = document.createElement("li");
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      socket.on("broadcast emit", (msg) => {
+        console.log("broadcast emit:", msg);
+      });
+      socket.on("server received", (msg) => {
+        console.log("server received:", msg);
+      });
     </script>
   </body>
 </html>
