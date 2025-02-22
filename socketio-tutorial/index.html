@@ -76,10 +76,30 @@
         }
       });
 
-      socket.on("chat message", (msg) => {
-        const item = document.createElement("li");
-        item.textContent = msg;
-        messages.appendChild(item);
+      socket.on("chat message", (msg, arg1, arg2, arg3) => {
+        const args = [msg, arg1, arg2, arg3];
+
+        args.forEach((arg) => {
+          const item = document.createElement("li");
+
+          if (typeof arg === "object" && arg !== null) {
+            let formattedArg = {};
+            for (const key in arg) {
+              if (arg[key] instanceof ArrayBuffer) {
+                const uint8Array = new Uint8Array(arg[key]);
+                const formattedBuffer = [...uint8Array].join(", ");
+                console.log(formattedBuffer);
+                formattedArg[key] = formattedBuffer;
+              } else {
+                formattedArg[key] = arg[key];
+              }
+            }
+            item.textContent = JSON.stringify(formattedArg);
+          } else {
+            item.textContent = arg;
+          }
+          messages.appendChild(item);
+        });
         window.scrollTo(0, document.body.scrollHeight);
       });
 

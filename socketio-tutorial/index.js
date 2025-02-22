@@ -21,7 +21,10 @@ io.on("connection", (socket) => {
   // });
   socket.on("chat message", (msg) => {
     // console.log("message: " + msg);
-    io.emit("chat message", msg);
+    io.emit("chat message", msg, "1", "2", {
+      3: "4",
+      5: Buffer.from([6, 7, 8]),
+    });
     socket.emit("server received", msg);
     socket.broadcast.emit("broadcast emit", msg);
   });
