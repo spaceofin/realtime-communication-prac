@@ -29,6 +29,11 @@ io.on("connection", (socket) => {
     socket.broadcast.emit("broadcast emit", msg);
     callback({ status: "server received" });
   });
+
+  socket.onAnyOutgoing((eventName, ...args) => {
+    console.log("onAnyOutgoing eventName:", eventName);
+    console.log("onAnyOutgoing args:", args);
+  });
 });
 
 server.listen(3000, () => {

@@ -116,6 +116,11 @@
       // socket.on("server received", (msg) => {
       //   console.log("server received:", msg);
       // });
+
+      socket.onAny((eventName, ...args) => {
+        console.log("onAny eventName:", eventName);
+        console.log("onAny args:", args);
+      });
     </script>
   </body>
 </html>
