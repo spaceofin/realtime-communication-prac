@@ -71,7 +71,15 @@
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         if (input.value) {
-          socket.emit("chat message", input.value);
+          socket
+            .timeout(5000)
+            .emit("chat message", input.value, (err, response) => {
+              if (err) {
+                console.log("error:", err);
+              } else {
+                console.log(response.status);
+              }
+            });
           input.value = "";
         }
       });
@@ -106,9 +114,9 @@
       socket.on("broadcast emit", (msg) => {
         console.log("broadcast emit:", msg);
       });
-      socket.on("server received", (msg) => {
-        console.log("server received:", msg);
-      });
+      // socket.on("server received", (msg) => {
+      //   console.log("server received:", msg);
+      // });
     </script>
   </body>
 </html>

@@ -19,14 +19,15 @@ io.on("connection", (socket) => {
   // socket.on("disconnect", () => {
   //   console.log("user disconnected");
   // });
-  socket.on("chat message", (msg) => {
+  socket.on("chat message", (msg, callback) => {
     // console.log("message: " + msg);
     io.emit("chat message", msg, "1", "2", {
       3: "4",
       5: Buffer.from([6, 7, 8]),
     });
-    socket.emit("server received", msg);
+    // socket.emit("server received", msg);
     socket.broadcast.emit("broadcast emit", msg);
+    callback({ status: "received" });
   });
 });
 
