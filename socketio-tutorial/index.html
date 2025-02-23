@@ -68,19 +68,18 @@
       const form = document.getElementById("form");
       const input = document.getElementById("input");
 
-      form.addEventListener("submit", (e) => {
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (input.value) {
-          socket
-            .timeout(5000)
-            .emit("chat message", input.value, (err, response) => {
-              if (err) {
-                console.log("error:", err);
-              } else {
-                console.log(response.status);
-              }
-            });
-          input.value = "";
+          try {
+            const response = await socket
+              .timeout(5000)
+              .emitWithAck("chat message", input.value);
+            input.value = "";
+            console.log(response.status);
+          } catch (err) {
+            console.log(err);
+          }
         }
       });
 

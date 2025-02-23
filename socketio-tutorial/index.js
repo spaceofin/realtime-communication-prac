@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
     });
     // socket.emit("server received", msg);
     socket.broadcast.emit("broadcast emit", msg);
-    callback({ status: "received" });
+    callback({ status: "server received" });
   });
 });
 
