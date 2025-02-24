@@ -60,10 +60,18 @@
     <ul id="messages"></ul>
     <form id="form" action="">
       <input id="input" autocomplete="off" /><button>Send</button>
+      <button id="toggle-btn">Disconnect</button>
     </form>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-      const socket = io();
+      const socket = io({
+        reconnectionDelay: 10000,
+        reconnectionDelayMax: 10000,
+      });
+
+      socket.on("connect", () => {
+        console.log("recovered?", socket.recovered);
+      });
 
       const form = document.getElementById("form");
       const input = document.getElementById("input");
@@ -80,6 +88,22 @@
           } catch (err) {
             console.log(err);
           }
+        }
+      });
+
+      const toggleButton = document.getElementById("toggle-btn");
+
+      toggleButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (socket.connected) {
+          toggleButton.innerText = "Connect";
+          if (socket.io.engine) {
+            socket.io.engine.close();
+          }
+          socket.disconnect();
+        } else {
+          toggleButton.innerText = "Disconnect";
+          socket.connect();
         }
       });
 

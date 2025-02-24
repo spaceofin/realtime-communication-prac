@@ -6,7 +6,11 @@ import { Server } from "socket.io";
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 60 * 1000,
+  },
+});
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -15,10 +19,10 @@ app.get("/", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  // console.log("a user connected");
-  // socket.on("disconnect", () => {
-  //   console.log("user disconnected");
-  // });
+  console.log("a user connected");
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+  });
 
   socket.on("chat message", (msg, callback) => {
     // console.log("message: " + msg);
