@@ -19,8 +19,13 @@ io.on("connection", (socket) => {
   // socket.on("disconnect", () => {
   //   console.log("user disconnected");
   // });
+
   socket.on("chat message", (msg, callback) => {
     // console.log("message: " + msg);
+
+    socket.join("some room");
+    io.to("some room").emit("hello world", "welcome!");
+
     io.emit("chat message", msg, "1", "2", {
       3: "4",
       5: Buffer.from([6, 7, 8]),
@@ -34,6 +39,8 @@ io.on("connection", (socket) => {
     console.log("onAnyOutgoing eventName:", eventName);
     console.log("onAnyOutgoing args:", args);
   });
+
+  // socket.leave("some room");
 });
 
 server.listen(3000, () => {
