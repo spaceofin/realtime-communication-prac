@@ -3,13 +3,28 @@ import { createServer } from "node:http";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Server } from "socket.io";
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
+
+// open the database file
+const db = await open({
+  filename: "chat.db",
+  driver: sqlite3.Database,
+});
+
+// create our 'messages' table (you can ignore the 'client_offset' column for now)
+await db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_offset TEXT UNIQUE,
+      content TEXT
+  );
+`);
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 60 * 1000,
-  },
+  connectionStateRecovery: {},
 });
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -18,33 +33,41 @@ app.get("/", (req, res) => {
   res.sendFile(join(__dirname, "index.html"));
 });
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   console.log("a user connected");
   socket.on("disconnect", () => {
     console.log("user disconnected");
   });
 
-  socket.on("chat message", (msg, callback) => {
-    // console.log("message: " + msg);
-
-    socket.join("some room");
-    io.to("some room").emit("hello world", "welcome!");
-
-    io.emit("chat message", msg, "1", "2", {
-      3: "4",
-      5: Buffer.from([6, 7, 8]),
-    });
-    // socket.emit("server received", msg);
-    socket.broadcast.emit("broadcast emit", msg);
-    callback({ status: "server received" });
+  socket.on("chat message", async (msg, callback) => {
+    let result;
+    try {
+      // store the message in the database
+      result = await db.run("INSERT INTO messages (content) VALUES (?)", msg);
+    } catch (e) {
+      // TODO handle the failure
+      return;
+    }
+    // include the offset with the message
+    io.emit("chat message", msg, result.lastID);
   });
 
-  socket.onAnyOutgoing((eventName, ...args) => {
-    console.log("onAnyOutgoing eventName:", eventName);
-    console.log("onAnyOutgoing args:", args);
-  });
+  console.log("socket.recovered:", socket.recovered);
 
-  // socket.leave("some room");
+  if (!socket.recovered) {
+    // if the connection state recovery was not successful
+    try {
+      await db.each(
+        "SELECT id, content FROM messages WHERE id > ?",
+        [socket.handshake.auth.serverOffset || 0],
+        (_err, row) => {
+          socket.emit("chat message", row.content, row.id);
+        }
+      );
+    } catch (e) {
+      // something went wrong
+    }
+  }
 });
 
 server.listen(3000, () => {
