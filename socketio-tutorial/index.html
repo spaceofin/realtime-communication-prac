@@ -112,9 +112,14 @@
       socket.on("chat message", (msg, serverOffset) => {
         const item = document.createElement("li");
         item.textContent = msg;
+
+        if (serverOffset === null) {
+          item.style.backgroundColor = "gray";
+        } else {
+          socket.auth.serverOffset = serverOffset;
+        }
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
-        socket.auth.serverOffset = serverOffset;
       });
     </script>
   </body>

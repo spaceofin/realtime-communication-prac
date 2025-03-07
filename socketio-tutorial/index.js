@@ -27,9 +27,11 @@ await db.exec(`
 if (cluster.isPrimary) {
   const numCPUs = availableParallelism();
   // create one worker per available core
+  let port;
   for (let i = 0; i < numCPUs; i++) {
+    port = 3000 + i;
     cluster.fork({
-      PORT: 3000 + i,
+      PORT: port,
     });
   }
 
@@ -52,8 +54,19 @@ if (cluster.isPrimary) {
 
   io.on("connection", async (socket) => {
     console.log("a user connected");
+    socket.broadcast.emit(
+      "chat message",
+      `A ${port} user has connected.`,
+      null
+    );
+
     socket.on("disconnect", () => {
       console.log("user disconnected");
+      socket.broadcast.emit(
+        "chat message",
+        `A ${port} user has disconnected.`,
+        null
+      );
     });
 
     // socket.on("hello", (value, callback) => {
@@ -82,6 +95,7 @@ if (cluster.isPrimary) {
       }
       // include the offset with the message
       io.emit("chat message", msg, result.lastID);
+      console.log("result.lastID:", result.lastID);
       callback();
     });
 
