@@ -54,6 +54,8 @@ if (cluster.isPrimary) {
 
   io.on("connection", async (socket) => {
     console.log("a user connected");
+    socket.emit("set nickname");
+
     socket.broadcast.emit(
       "chat message",
       `A ${port} user has connected.`,

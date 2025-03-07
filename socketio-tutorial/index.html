@@ -11,18 +11,36 @@
           Helvetica, Arial, sans-serif;
       }
 
-      #form {
-        background: rgba(0, 0, 0, 0.15);
-        padding: 0.25rem;
+      #chat-bar {
         position: fixed;
+        display: flex;
         bottom: 0;
         left: 0;
         right: 0;
+      }
+
+      #nicknameDisplay {
+        width: 3rem;
+        height: 3rem;
         display: flex;
+        padding-left: 1rem;
+        padding-right: 2rem;
+        font-weight: bold;
+        overflow-x: auto;
+        align-items: center;
+        background: #aaa;
+      }
+
+      #form {
+        background: #aaa;
+        padding: 0.25rem;
+        display: flex;
+        flex-grow: 1;
         height: 3rem;
         box-sizing: border-box;
         backdrop-filter: blur(10px);
       }
+
       #input {
         border: none;
         padding: 0 1rem;
@@ -54,17 +72,74 @@
       #messages > li:nth-child(odd) {
         background: #efefef;
       }
+
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.4);
+        z-index: 1;
+      }
+
+      #nicknameForm {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        top: 70%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1001;
+        width: 300px;
+      }
+
+      #nicknameForm label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+      }
+
+      #nicknameForm input {
+        width: auto;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      #nicknameForm button {
+        width: 100%;
+        padding: 10px;
+        background-color: #33475d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      #nicknameForm button:hover {
+        background-color: rgb(32, 56, 81);
+      }
     </style>
   </head>
   <body>
     <ul id="messages"></ul>
-    <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Send</button>
-      <button id="toggle-btn">Disconnect</button>
-    </form>
+    <div id="chat-bar">
+      <span id="nicknameDisplay"></span>
+      <form id="form" action="">
+        <input id="input" autocomplete="off" /><button>Send</button>
+        <button id="toggle-btn">Disconnect</button>
+      </form>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let counter = 0;
+      let nickname = "";
       const socket = io({
         // enable retries
         ackTimeout: 10000,
@@ -109,12 +184,67 @@
         }
       });
 
+      function toggleNicknameForm() {
+        if (nicknameForm.style.display === "none") {
+          nicknameForm.style.display = "block";
+        } else {
+          nicknameForm.style.display = "none";
+        }
+      }
+
+      socket.on("set nickname", () => {
+        const setNicknameModal = document.createElement("div");
+        setNicknameModal.id = "setNicknameModal";
+
+        const overlayBg = document.createElement("div");
+        overlayBg.classList.add("overlay");
+        setNicknameModal.appendChild(overlayBg);
+
+        const nicknameForm = document.createElement("div");
+        nicknameForm.id = "nicknameForm";
+
+        const nicknameLabel = document.createElement("label");
+        nicknameLabel.setAttribute("for", "nickname");
+        nicknameLabel.innerText = "Enter your Nickname";
+
+        const nicknameInput = document.createElement("input");
+        nicknameInput.type = "text";
+        nicknameInput.id = "nickname";
+        nicknameInput.placeholder = "Nickname";
+
+        const setNicknameBtn = document.createElement("button");
+        setNicknameBtn.id = "setNicknameBtn";
+        setNicknameBtn.innerText = "Set";
+
+        nicknameForm.appendChild(nicknameLabel);
+        nicknameForm.appendChild(nicknameInput);
+        nicknameForm.appendChild(setNicknameBtn);
+
+        setNicknameModal.appendChild(nicknameForm);
+
+        document.body.appendChild(setNicknameModal);
+
+        setNicknameModal.style.overflow = "hidden";
+
+        setNicknameBtn.addEventListener("click", () => {
+          const enteredNickname = nicknameInput.value.trim();
+          if (enteredNickname) {
+            nickname = enteredNickname;
+            setNicknameModal.remove();
+            document.body.style.overflow = "";
+            document.getElementById("nicknameDisplay").innerText = nickname;
+          } else {
+            alert("Please enter a nickname");
+          }
+        });
+      });
+
       socket.on("chat message", (msg, serverOffset) => {
         const item = document.createElement("li");
         item.textContent = msg;
 
         if (serverOffset === null) {
-          item.style.backgroundColor = "gray";
+          item.style.backgroundColor = "#FFD89B";
         } else {
           socket.auth.serverOffset = serverOffset;
         }
