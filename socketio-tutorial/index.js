@@ -104,7 +104,7 @@ if (cluster.isPrimary) {
         return;
       }
       // include the offset with the message
-      io.emit("chat message", msg, result.lastID, nickname);
+      socket.broadcast.emit("chat message", msg, result.lastID, nickname);
     });
 
     // console.log("socket.recovered:", socket.recovered);

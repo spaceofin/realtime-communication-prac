@@ -185,6 +185,17 @@
               console.log(response.status);
             }
           );
+          const item = document.createElement("li");
+          const name = document.createElement("span");
+          name.textContent = nickname;
+          name.id = "nicknameChatDisplay";
+          item.appendChild(name);
+          const message = document.createElement("span");
+          message.textContent = input.value;
+          item.appendChild(message);
+          socket.auth.serverOffset += 1;
+          messages.appendChild(item);
+          window.scrollTo(0, document.body.scrollHeight);
           input.value = "";
         }
       });
