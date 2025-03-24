@@ -172,6 +172,39 @@
       const form = document.getElementById("form");
       const input = document.getElementById("input");
 
+      let isTyping = false;
+      let typingTimeout;
+
+      input.addEventListener("input", (e) => {
+        if (!isTyping) {
+          isTyping = true;
+          socket.emit("typing", nickname);
+        }
+
+        clearTimeout(typingTimeout);
+
+        typingTimeout = setTimeout(() => {
+          isTyping = false;
+          socket.emit("typing end", nickname);
+        }, 500);
+      });
+
+      socket.on("typing", (user) => {
+        let typingItem = document.getElementById(user);
+        if (!typingItem) {
+          const typingStatusItem = document.createElement("li");
+          typingStatusItem.style.backgroundColor = "#FFF1A2";
+          typingStatusItem.textContent = `${user} is typing...`;
+          typingStatusItem.id = user;
+          messages.appendChild(typingStatusItem);
+        }
+      });
+
+      socket.on("typing end", (user) => {
+        typingItem = document.getElementById(user);
+        typingItem.remove();
+      });
+
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (input.value) {

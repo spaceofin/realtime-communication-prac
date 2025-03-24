@@ -53,7 +53,7 @@ if (cluster.isPrimary) {
     res.sendFile(join(__dirname, "index.html"));
   });
 
-  let userNickname;
+  const userNicknames = {};
 
   io.on("connection", async (socket) => {
     console.log("socket id:", socket.id);
@@ -75,7 +75,9 @@ if (cluster.isPrimary) {
     });
 
     socket.on("set nickname", (newNickname, callback) => {
-      userNickname = newNickname;
+      // userNickname = newNickname;
+      userNicknames[socket.id] = newNickname;
+      console.log(`userNicknames: ${JSON.stringify(userNicknames)}`);
       callback({
         status: "ok",
       });
@@ -83,7 +85,7 @@ if (cluster.isPrimary) {
 
     socket.on("chat message", async (msg, clientOffset, callback) => {
       let result;
-      const nickname = userNickname;
+      const nickname = userNickname[socket.id];
       try {
         // store the message in the database
         result = await db.run(
@@ -108,6 +110,16 @@ if (cluster.isPrimary) {
     });
 
     // console.log("socket.recovered:", socket.recovered);
+
+    socket.on("typing", (user, callback) => {
+      io.emit("typing", user);
+      callback();
+    });
+
+    socket.on("typing end", (user, callback) => {
+      io.emit("typing end", user);
+      callback();
+    });
 
     if (!socket.recovered) {
       // if the connection state recovery was not successful
