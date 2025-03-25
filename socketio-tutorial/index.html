@@ -5,10 +5,25 @@
     <title>Socket.IO chat</title>
     <style>
       body {
+        width: 100vw;
+        height: 100vh;
         margin: 0;
-        padding-bottom: 3rem;
+        /* padding-bottom: 3rem; */
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           Helvetica, Arial, sans-serif;
+      }
+
+      #app {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+      }
+
+      #chat-main {
+        display: flex;
+        width: 100%;
+        height: calc(100% - 3rem);
       }
 
       #chat-bar {
@@ -17,6 +32,28 @@
         bottom: 0;
         left: 0;
         right: 0;
+      }
+
+      #online-list-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        margin: 0;
+        padding: 1rem;
+        width: 10rem;
+        background-color: rgb(255, 211, 175);
+        box-sizing: border-box;
+      }
+
+      #online-list {
+        list-style-type: none;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        padding: 0;
+      }
+
+      #online-list-title {
+        font-weight: bold;
       }
 
       #nicknameModal {
@@ -81,6 +118,7 @@
         list-style-type: none;
         margin: 0;
         padding: 0;
+        flex-grow: 1;
       }
       #messages > li {
         padding: 0.5rem 1rem;
@@ -144,13 +182,21 @@
     </style>
   </head>
   <body>
-    <ul id="messages"></ul>
-    <div id="chat-bar">
-      <span id="nicknameDisplay"></span>
-      <form id="form" action="">
-        <input id="input" autocomplete="off" /><button>Send</button>
-        <button id="toggle-btn">Disconnect</button>
-      </form>
+    <div id="app">
+      <div id="chat-main">
+        <ul id="messages"></ul>
+        <div id="online-list-container">
+          <span id="online-list-title">ON-LINE</span>
+          <ul id="online-list"></ul>
+        </div>
+      </div>
+      <div id="chat-bar">
+        <span id="nicknameDisplay"></span>
+        <form id="form" action="">
+          <input id="input" autocomplete="off" /><button>Send</button>
+          <button id="toggle-btn">Disconnect</button>
+        </form>
+      </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -242,6 +288,10 @@
           // if (socket.io.engine) {
           //   socket.io.engine.close();
           // }
+          const username = document.getElementById(`${nickname}-online`);
+          username.remove();
+          const onlineList = document.getElementById("online-list");
+          onlineList.innerHTML = "";
           socket.disconnect();
         } else {
           toggleButton.innerText = "Disconnect";
@@ -310,10 +360,42 @@
               .emit("set nickname", nickname, (err, response) => {
                 console.log(response.status);
               });
+
+            const username = document.createElement("li");
+            username.innerText = nickname;
+            username.id = `${nickname}-online`;
+            const onlineList = document.getElementById("online-list");
+            onlineList.appendChild(username);
           } else {
             alert("Please enter a nickname");
           }
         });
+      });
+
+      socket.on("set offline", (nickname) => {
+        // console.log("set offline:", nickname);
+        const username = document.getElementById(`${nickname}-online`);
+        if (username) username.remove();
+      });
+
+      socket.on("set online list", (nickname) => {
+        // console.log(`set online list:`, nickname);
+        const username = document.createElement("li");
+        username.innerText = nickname;
+        username.id = `${nickname}-online`;
+        const onlineList = document.getElementById("online-list");
+        onlineList.appendChild(username);
+      });
+
+      socket.on("set online", (newUserNickname, newUserSocketID) => {
+        if (!nickname) return;
+        const username = document.createElement("li");
+        username.innerText = newUserNickname;
+        username.id = `${newUserNickname}-online`;
+        const onlineList = document.getElementById("online-list");
+        onlineList.appendChild(username);
+        // console.log("new user's socketId:", newUserSocketID);
+        socket.emit("set online list", newUserSocketID);
       });
 
       socket.on("chat message", (msg, serverOffset, nicknameData) => {

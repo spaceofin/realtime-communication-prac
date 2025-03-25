@@ -36,9 +36,23 @@ if (cluster.isPrimary) {
     });
   }
 
+  // console.log(
+  //   `workers: ${Object.values(cluster.workers).forEach((worker) => {
+  //     console.log(
+  //       "worker id:",
+  //       worker.id,
+  //       ", worker process pid:",
+  //       worker.process.pid
+  //     );
+  //   })}`
+  // );
+
   // set up the adapter on the primary thread
   setupPrimary();
 } else {
+  // console.log(
+  //   `cluster worker id: ${cluster.worker.id}, Worker process started with PID: ${process.pid}`
+  // );
   const app = express();
   const server = createServer(app);
   const io = new Server(server, {
@@ -67,6 +81,7 @@ if (cluster.isPrimary) {
 
     socket.on("disconnect", () => {
       console.log("user disconnected");
+      socket.broadcast.emit("set offline", userNicknames[socket.id]);
       socket.broadcast.emit(
         "chat message",
         `A ${port} user has disconnected.`,
@@ -77,15 +92,21 @@ if (cluster.isPrimary) {
     socket.on("set nickname", (newNickname, callback) => {
       // userNickname = newNickname;
       userNicknames[socket.id] = newNickname;
-      console.log(`userNicknames: ${JSON.stringify(userNicknames)}`);
+      // console.log(`userNicknames: ${JSON.stringify(userNicknames)}`);
+      socket.broadcast.emit("set online", newNickname, socket.id);
       callback({
         status: "ok",
       });
     });
 
+    socket.on("set online list", (newUserSocketID, callback) => {
+      io.to(newUserSocketID).emit("set online list", userNicknames[socket.id]);
+      callback();
+    });
+
     socket.on("chat message", async (msg, clientOffset, callback) => {
       let result;
-      const nickname = userNickname[socket.id];
+      const nickname = userNicknames[socket.id];
       try {
         // store the message in the database
         result = await db.run(
