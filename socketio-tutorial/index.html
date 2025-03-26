@@ -86,6 +86,21 @@
         margin-right: 0.4rem;
       }
 
+      #nickname-chat-display-private {
+        background: #fff;
+        border-radius: 0.5rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        margin-right: 0.4rem;
+      }
+
+      #chat-user-select {
+        width: 5rem;
+        height: 2rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+      }
+
       #form {
         background: #aaa;
         padding: 0.25rem;
@@ -196,6 +211,9 @@
       </div>
       <div id="chat-bar">
         <span id="nickname-display"></span>
+        <select id="chat-user-select" onchange="selectChatUser()">
+          <option id="chat-user-all" value="all">ALL</option>
+        </select>
         <form id="form" action="">
           <input id="input" autocomplete="off" /><button>Send</button>
           <button id="toggle-btn">Disconnect</button>
@@ -258,29 +276,86 @@
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (input.value) {
-          // compute a unique offset
-          const clientOffset = `${socket.id}-${counter++}`;
-          socket.emit(
-            "chat message",
-            input.value,
-            clientOffset,
-            (err, response) => {
-              console.log(response.status);
-            }
-          );
-          const item = document.createElement("li");
-          const name = document.createElement("span");
-          name.textContent = nickname;
-          name.id = "nickname-chat-display";
-          item.appendChild(name);
-          const message = document.createElement("span");
-          message.textContent = input.value;
-          item.appendChild(message);
-          socket.auth.serverOffset += 1;
-          messages.appendChild(item);
-          window.scrollTo(0, document.body.scrollHeight);
-          input.value = "";
+          const selectedOption = document.getElementById("chat-user-select");
+          if (selectedOption.value !== "all") {
+            socket.emit(
+              "chat message private",
+              input.value,
+              nickname,
+              selectedOption.value
+            );
+
+            const selectedUser =
+              selectedOption.options[selectedOption.selectedIndex];
+
+            const item = document.createElement("li");
+            item.style.backgroundColor = "#D6FB84";
+
+            const name = document.createElement("span");
+            name.textContent = nickname;
+            name.id = "nickname-chat-display-private";
+            item.appendChild(name);
+
+            const receiverName = document.createElement("span");
+            receiverName.textContent = selectedUser.textContent;
+            receiverName.id = "nickname-chat-display-private";
+            item.appendChild(receiverName);
+
+            const message = document.createElement("span");
+            message.textContent = input.value;
+            item.appendChild(message);
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+            input.value = "";
+          } else {
+            // compute a unique offset
+            const clientOffset = `${socket.id}-${counter++}`;
+            socket.emit(
+              "chat message",
+              input.value,
+              clientOffset,
+              (err, response) => {
+                console.log(response.status);
+              }
+            );
+            const item = document.createElement("li");
+            const name = document.createElement("span");
+            name.textContent = nickname;
+            name.id = "nickname-chat-display";
+            item.appendChild(name);
+            const message = document.createElement("span");
+            message.textContent = input.value;
+            item.appendChild(message);
+            socket.auth.serverOffset += 1;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+            input.value = "";
+          }
         }
+      });
+
+      socket.on("chat message private", (msg, senderNickname) => {
+        console.log("senderNickname:", senderNickname);
+
+        const item = document.createElement("li");
+        item.style.backgroundColor = "#D6FB84";
+
+        const name = document.createElement("span");
+        name.textContent = senderNickname;
+        name.id = "nickname-chat-display-private";
+        item.appendChild(name);
+
+        const receiverName = document.createElement("span");
+        receiverName.textContent = nickname;
+        receiverName.id = "nickname-chat-display-private";
+        item.appendChild(receiverName);
+
+        const message = document.createElement("span");
+        message.textContent = msg;
+        item.appendChild(message);
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+        input.value = "";
       });
 
       const toggleButton = document.getElementById("toggle-btn");
@@ -296,6 +371,14 @@
           username.remove();
           const onlineList = document.getElementById("online-list");
           onlineList.innerHTML = "";
+
+          const userSelect = document.getElementById("chat-user-select");
+          for (let i = userSelect.options.length - 1; i >= 0; i--) {
+            const option = userSelect.options[i];
+            if (option.id !== "chat-user-all") {
+              userSelect.remove(i);
+            }
+          }
           socket.disconnect();
         } else {
           toggleButton.innerText = "Disconnect";
@@ -309,6 +392,11 @@
         } else {
           nicknameForm.style.display = "none";
         }
+      }
+
+      function selectChatUser() {
+        const select = document.getElementById("chat-user-select");
+        const selectedUser = select.value;
       }
 
       socket.on("set nickname", () => {
@@ -379,15 +467,25 @@
         // console.log("set offline:", nickname);
         const username = document.getElementById(`${nickname}-online`);
         if (username) username.remove();
+
+        const userOption = document.getElementById(`chat-user-${nickname}`);
+        if (userOption) userOption.remove();
       });
 
-      socket.on("set online list", (nickname) => {
+      socket.on("set online list", (nickname, userSocketID) => {
         // console.log(`set online list:`, nickname);
         const username = document.createElement("li");
         username.innerText = nickname;
         username.id = `${nickname}-online`;
         const onlineList = document.getElementById("online-list");
         onlineList.appendChild(username);
+
+        const userOption = document.createElement("option");
+        userOption.innerText = nickname;
+        userOption.id = `chat-user-${nickname}`;
+        userOption.value = userSocketID;
+        const userSelect = document.getElementById("chat-user-select");
+        userSelect.appendChild(userOption);
       });
 
       socket.on("set online", (newUserNickname, newUserSocketID) => {
@@ -399,6 +497,13 @@
         onlineList.appendChild(username);
         // console.log("new user's socketId:", newUserSocketID);
         socket.emit("set online list", newUserSocketID);
+
+        const userOption = document.createElement("option");
+        userOption.innerText = newUserNickname;
+        userOption.id = `chat-user-${newUserNickname}`;
+        userOption.value = newUserSocketID;
+        const userSelect = document.getElementById("chat-user-select");
+        userSelect.appendChild(userOption);
       });
 
       socket.on("chat message", (msg, serverOffset, nicknameData) => {

@@ -100,9 +100,31 @@ if (cluster.isPrimary) {
     });
 
     socket.on("set online list", (newUserSocketID, callback) => {
-      io.to(newUserSocketID).emit("set online list", userNicknames[socket.id]);
+      io.to(newUserSocketID).emit(
+        "set online list",
+        userNicknames[socket.id],
+        socket.id
+      );
       callback();
     });
+
+    socket.on(
+      "chat message private",
+      (msg, senderNickname, receiverSocketId, callback) => {
+        console.log(
+          "sender:",
+          senderNickname,
+          " receiverSocketId:",
+          receiverSocketId
+        );
+        io.to(receiverSocketId).emit(
+          "chat message private",
+          msg,
+          senderNickname
+        );
+        callback();
+      }
+    );
 
     socket.on("chat message", async (msg, clientOffset, callback) => {
       let result;
