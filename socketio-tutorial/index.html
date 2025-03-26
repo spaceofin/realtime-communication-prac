@@ -29,9 +29,11 @@
       #chat-bar {
         position: fixed;
         display: flex;
+        align-items: center;
         bottom: 0;
         left: 0;
         right: 0;
+        background: #aaa;
       }
 
       #online-list-container {
@@ -56,7 +58,7 @@
         font-weight: bold;
       }
 
-      #nicknameModal {
+      #nickname-modal {
         position: fixed;
         top: 0;
         left: 0;
@@ -64,7 +66,7 @@
         height: 100%;
       }
 
-      #nicknameDisplay {
+      #nickname-display {
         width: 3rem;
         height: 3rem;
         display: flex;
@@ -76,7 +78,7 @@
         background: #aaa;
       }
 
-      #nicknameChatDisplay {
+      #nickname-chat-display {
         background: #ffb137;
         border-radius: 0.5rem;
         padding-left: 0.5rem;
@@ -101,9 +103,11 @@
         border-radius: 2rem;
         margin: 0.25rem;
       }
+
       #input:focus {
         outline: none;
       }
+
       #form > button {
         background: #333;
         border: none;
@@ -137,7 +141,7 @@
         z-index: 1;
       }
 
-      #nicknameForm {
+      #nickname-form {
         position: absolute;
         display: flex;
         flex-direction: column;
@@ -152,13 +156,13 @@
         width: 300px;
       }
 
-      #nicknameForm label {
+      #nickname-form label {
         display: block;
         margin-bottom: 10px;
         font-weight: bold;
       }
 
-      #nicknameForm input {
+      #nickname-form input {
         width: auto;
         padding: 8px;
         margin-bottom: 10px;
@@ -166,7 +170,7 @@
         border-radius: 4px;
       }
 
-      #nicknameForm button {
+      #nickname-form button {
         width: 100%;
         padding: 10px;
         background-color: #33475d;
@@ -176,7 +180,7 @@
         cursor: pointer;
       }
 
-      #nicknameForm button:hover {
+      #nickname-form button:hover {
         background-color: rgb(32, 56, 81);
       }
     </style>
@@ -191,7 +195,7 @@
         </div>
       </div>
       <div id="chat-bar">
-        <span id="nicknameDisplay"></span>
+        <span id="nickname-display"></span>
         <form id="form" action="">
           <input id="input" autocomplete="off" /><button>Send</button>
           <button id="toggle-btn">Disconnect</button>
@@ -267,7 +271,7 @@
           const item = document.createElement("li");
           const name = document.createElement("span");
           name.textContent = nickname;
-          name.id = "nicknameChatDisplay";
+          name.id = "nickname-chat-display";
           item.appendChild(name);
           const message = document.createElement("span");
           message.textContent = input.value;
@@ -309,14 +313,14 @@
 
       socket.on("set nickname", () => {
         const nicknameModal = document.createElement("div");
-        nicknameModal.id = "nicknameModal";
+        nicknameModal.id = "nickname-modal";
 
         const overlayBg = document.createElement("div");
         overlayBg.classList.add("overlay");
         nicknameModal.appendChild(overlayBg);
 
         const nicknameForm = document.createElement("div");
-        nicknameForm.id = "nicknameForm";
+        nicknameForm.id = "nickname-form";
 
         const nicknameLabel = document.createElement("label");
         nicknameLabel.setAttribute("for", "nickname");
@@ -335,7 +339,6 @@
         });
 
         const nicknameBtn = document.createElement("button");
-        nicknameBtn.id = "nicknameBtn";
         nicknameBtn.innerText = "Set";
 
         nicknameForm.appendChild(nicknameLabel);
@@ -354,7 +357,7 @@
             nickname = enteredNickname;
             nicknameModal.remove();
             document.body.style.overflow = "";
-            document.getElementById("nicknameDisplay").innerText = nickname;
+            document.getElementById("nickname-display").innerText = nickname;
             socket
               .timeout(5000)
               .emit("set nickname", nickname, (err, response) => {
@@ -407,7 +410,7 @@
         } else {
           const name = document.createElement("span");
           name.textContent = nicknameData || nickname;
-          name.id = "nicknameChatDisplay";
+          name.id = "nickname-chat-display";
 
           item.appendChild(name);
 
