@@ -63,6 +63,8 @@ if (cluster.isPrimary) {
 
   const __dirname = dirname(fileURLToPath(import.meta.url));
 
+  app.use(express.static(join(__dirname, "..", "client")));
+
   app.get("/", (req, res) => {
     res.sendFile(join(__dirname, "..", "client", "index.html"));
   });
